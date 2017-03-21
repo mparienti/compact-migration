@@ -94,12 +94,13 @@ class MiniOptimizer:
         return field_name
 
     def clean_eol(self, string):
+        string = string.strip()
         if (string[-1] == ';'):
             return string[:-1]
         pos_comment = string.rfind('#')
         if (pos_comment == -1):
             raise (Exception("Alter table statement without ';' and without comment:\n" + s))
-        return string[:pos_comment]
+        return self.clean_eol(string[:pos_comment])
 
     def work(self):
         self.sort_statements()
