@@ -1,0 +1,42 @@
+
+
+* Usage
+
+#+BEGIN_SRC bash
+python /data/compact-migration.py /data/migrations/migrate.sql > /data/migrations/compact.sql
+#+END_SRC
+
+
+* Testing
+
+From this directory:
+#+BEGIN_SRC bash
+docker build -t mpm/mysqllab --build-arg version=5.5 .
+docker run -v `pwd`:/data -ti mpm/mysqllab /bin/bash #/usr/bin/tmux is also available
+#+END_SRC
+(you can change 5.5 into 5.7)
+
+Copy:
+1. the dump of your database to migrate into ~dumps~ directory
+2. the migration script you want to compact into ~migrates~ directory
+
+From tmux:
+#+BEGIN_SRC
+# Creation of the database
+echo "create database lab" | mysql mysql
+
+# Import your dump - so adapt the filename
+cat /data/dumps/dump.sql | mysql lab
+
+# Adapt to your migration compact script
+python /data/compact-migration.py /data/migrations/migrate.sql > /data/migrations/compact.sql
+
+cat /data/migrations/compact.sql | mysql lab
+#+END_SRC
+
+If you get no error, you can use the ~compact.sql~ script to migrate.
+
+* Warning
+This script is funded on the assumptions:
+1. the sql migration script contains one and only statement per line;
+2. each modification is complete: when a field is modified 2 times, only the second modification is kept
