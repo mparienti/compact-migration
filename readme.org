@@ -22,6 +22,9 @@ Copy:
 
 From tmux:
 #+BEGIN_SRC
+# Start MySQL
+service mysql start
+
 # Creation of the database
 echo "create database lab" | mysql mysql
 
@@ -29,7 +32,7 @@ echo "create database lab" | mysql mysql
 cat /data/dumps/dump.sql | mysql lab
 
 # Adapt to your migration compact script
-python /data/compact-migration.py /data/migrations/migrate.sql > /data/migrations/compact.sql
+python3 /data/compact-migration.py /data/migrations/migrate.sql > /data/migrations/compact.sql
 
 cat /data/migrations/compact.sql | mysql lab
 #+END_SRC
