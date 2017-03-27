@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
 import sys
+from re import sub
+from re import I as reicase
+
 
 class MiniOptimizer:
     statements = []
@@ -32,7 +35,7 @@ class MiniOptimizer:
             first_word = words[0].lower()
             if first_word == "alter":
                 if words[1].lower() == "table":
-                    self.alters.append(s)
+                    self.alters.append(self.remove_isam(s))
                 else:
                     raise(Exception("Find a curious ALTER statements:\n" + s ))
             elif first_word == "create":
@@ -57,7 +60,6 @@ class MiniOptimizer:
                 raise(Exception("Do know how to manage this statements:\n" + s))
 
     def group_alters(self):
-        # make some hard work here :-)
         for alter in self.alters:
             table_name = alter.split()[2]
             if "`" not in table_name:
@@ -72,28 +74,39 @@ class MiniOptimizer:
         for table_name in self.alter_per_table.keys():
             # copy alters statements in reverse order to have last first
             alters = self.alter_per_table[table_name][::-1]
-            already_in = []
-            sql = self.clean_eol(alters[0])
-            already_in.append(self.get_field(sql))
+            already_in = {}
+            sql = []
+            sql.append(self.clean_eol(alters[0]))
+            already_in[self.get_field(sql[0])] = 0
             for s in alters[1:]:
                 field = self.get_field(s)
-                if field in already_in:
+                if field in already_in.keys():
                     # the field modified has already been inserted
+                    # Fixme:
+                    # - [ ] if now add change previous from change into add
+                    # - [ ] drop + change!
                     continue
-                already_in.append(field)
-                # remove 3 words at the beginning of the line
-                s = ' '.join(s.split()[3:])
-                sql = sql + ', ' + self.clean_eol(s)
-            self.merge_alters.append(sql+';')
+                already_in[field] = len(already_in)
+                # remove 3 words at the beginning of the line (alter table table_name)
+                s = ' ' . join(s.split()[3:])
+                sql.append( self.clean_eol(s))
+            self.merge_alters.append(", \n    ".join(sql) + ';')
 
-
+    # Improve:
+    # - [X] charset
+    # - [ ] detect duplicate add index
     def get_field(self, alter_stmt):
         field_name = alter_stmt.split()[4]
         if field_name == "COLUMN":
             field_name = alter_stmt.split()[5]
         if "`" not in field_name:
             field_name = "`" + field_name +  "`"
+        if '=' in field_name:
+            return field_name.split('=')[0]
         return field_name
+
+    def remove_isam(self, string):
+        return sub(r'engine[ ]*=[ ]*myisam', '', string, flags=reicase)
 
     def clean_eol(self, string):
         string = string.strip()
@@ -110,7 +123,7 @@ class MiniOptimizer:
         self.join_alters()
 
     def dump_all(self):
-        for stat in (self.drops, self.creates, self.drop_index, self.merge_alters, self.modify_rows, self.views):
+        for stat in (self.drops, self.creates, self.merge_alters, self.drop_index, self.modify_rows, self.views):
         #for stat in (self.merge_alters, []): #when testin
             for line in stat:
                 print(line)
