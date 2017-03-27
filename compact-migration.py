@@ -3,7 +3,7 @@
 import sys
 from re import sub
 from re import I as reicase
-
+from re import compile as recompile
 
 class MiniOptimizer:
     statements = []
@@ -18,6 +18,9 @@ class MiniOptimizer:
     comments = []
 
     alter_per_table = {}
+
+    def __init__(self):
+        self.re_index = recompile('index\(`(\w+)`\)', reicase)
 
     # Read file name from command line and fill statements variables
     def read_files(self, files):
@@ -94,7 +97,8 @@ class MiniOptimizer:
 
     # Improve:
     # - [X] charset
-    # - [ ] detect duplicate add index
+    # - [X] detect duplicate add index
+    # - [ ] detect drop
     def get_field(self, alter_stmt):
         field_name = alter_stmt.split()[4]
         if field_name == "COLUMN":
@@ -102,7 +106,12 @@ class MiniOptimizer:
         if "`" not in field_name:
             field_name = "`" + field_name +  "`"
         if '=' in field_name:
-            return field_name.split('=')[0]
+            field_name = field_name.split('=')[0]
+        if field_name.lower() == '`index`':
+            field_name = 'index_' + alter_stmt.split()[5]
+        match_index = self.re_index.match(field_name)
+        if match_index:
+            field_name = 'index_' + match_index.group(1)
         return field_name
 
     def remove_isam(self, string):
