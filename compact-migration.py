@@ -89,6 +89,8 @@ class MiniOptimizer:
 
     def get_field(self, alter_stmt):
         field_name = alter_stmt.split()[4]
+        if field_name == "COLUMN":
+            field_name = alter_stmt.split()[5]
         if "`" not in field_name:
             field_name = "`" + field_name +  "`"
         return field_name
