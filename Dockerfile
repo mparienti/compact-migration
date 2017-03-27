@@ -3,6 +3,8 @@ FROM debian
 
 LABEL Description="mysql testing lab" version="0.12"
 
+EXPOSE 3306
+
 ARG version=5-5
 
 ENV DEBIAN_FRONTEND noninteractive
