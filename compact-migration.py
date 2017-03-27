@@ -83,7 +83,7 @@ class MiniOptimizer:
             already_in[self.get_field(sql[0])] = 0
             for s in alters[1:]:
                 field = self.get_field(s)
-                if field not in ['`KEY`', '`PRIMARY`'] and 'index_' not in field  and field in already_in.keys():
+                if field not in ['`KEY`', '`PRIMARY`'] and field in already_in.keys(): ### and 'index_' not in field?
                     # the field modified has already been inserted
                     if s.split()[3] == "ADD" and s.split()[3] == "ADD":
                         sql[already_in[field]] = sql[already_in[field]].replace("CHANGE " + field, "ADD")
