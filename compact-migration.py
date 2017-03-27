@@ -20,7 +20,7 @@ class MiniOptimizer:
     alter_per_table = {}
 
     def __init__(self):
-        self.re_index = recompile('index\(`(\w+)`\)', reicase)
+        self.re_index = recompile('.*index[ ]*\([ ]*`(\w+)`[ ]*\).*', reicase)
 
     # Read file name from command line and fill statements variables
     def read_files(self, files):
@@ -100,18 +100,22 @@ class MiniOptimizer:
     # - [X] detect duplicate add index
     # - [ ] detect drop
     def get_field(self, alter_stmt):
-        field_name = alter_stmt.split()[4]
+        #print (alter_stmt + " => ")
+        alter_stmt_token = alter_stmt.split()
+        field_name = alter_stmt_token[4]
         if field_name == "COLUMN":
-            field_name = alter_stmt.split()[5]
+            field_name = alter_stmt_token[5]
         if "`" not in field_name:
             field_name = "`" + field_name +  "`"
         if '=' in field_name:
             field_name = field_name.split('=')[0]
-        if field_name.lower() == '`index`':
-            field_name = 'index_' + alter_stmt.split()[5]
-        match_index = self.re_index.match(field_name)
+        match_index = self.re_index.match(alter_stmt)
         if match_index:
             field_name = 'index_' + match_index.group(1)
+        elif field_name.lower() == '`index`':
+            field_name = 'index_' + alter_stmt_token[5]
+        if field_name[-1] == ';':
+            field_name = field_name[:-1]
         return field_name
 
     def remove_isam(self, string):
