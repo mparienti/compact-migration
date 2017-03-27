@@ -77,17 +77,16 @@ class MiniOptimizer:
         for table_name in self.alter_per_table.keys():
             # copy alters statements in reverse order to have last first
             alters = self.alter_per_table[table_name][::-1]
-            already_in = {}
+            already_in = {} # dict: field_name => sql_statement
             sql = []
             sql.append(self.clean_eol(alters[0]))
             already_in[self.get_field(sql[0])] = 0
             for s in alters[1:]:
                 field = self.get_field(s)
-                if field in already_in.keys():
+                if field not in ['`KEY`', '`PRIMARY`'] and 'index_' not in field  and field in already_in.keys():
                     # the field modified has already been inserted
-                    # Fixme:
-                    # - [ ] if now add change previous from change into add
-                    # - [ ] drop + change!
+                    if s.split()[3] == "ADD" and s.split()[3] == "ADD":
+                        sql[already_in[field]] = sql[already_in[field]].replace("CHANGE " + field, "ADD")
                     continue
                 already_in[field] = len(already_in)
                 # remove 3 words at the beginning of the line (alter table table_name)
@@ -95,12 +94,7 @@ class MiniOptimizer:
                 sql.append( self.clean_eol(s))
             self.merge_alters.append(", \n    ".join(sql) + ';')
 
-    # Improve:
-    # - [X] charset
-    # - [X] detect duplicate add index
-    # - [ ] detect drop
     def get_field(self, alter_stmt):
-        #print (alter_stmt + " => ")
         alter_stmt_token = alter_stmt.split()
         field_name = alter_stmt_token[4]
         if field_name == "COLUMN":
@@ -116,6 +110,7 @@ class MiniOptimizer:
             field_name = 'index_' + alter_stmt_token[5]
         if field_name[-1] == ';':
             field_name = field_name[:-1]
+        #print (field_name)
         return field_name
 
     def remove_isam(self, string):
@@ -136,7 +131,7 @@ class MiniOptimizer:
         self.join_alters()
 
     def dump_all(self):
-        for stat in (self.drops, self.creates, self.merge_alters, self.drop_index, self.modify_rows, self.views):
+        for stat in (self.drops, self.creates, self.drop_index, self.merge_alters, self.modify_rows, self.views):
         #for stat in (self.merge_alters, []): #when testin
             for line in stat:
                 print(line)
@@ -156,13 +151,8 @@ optimizer.group_alters()
 optimizer.join_alters()
 
 
-# when finish
 optimizer.dump_all()
 
 
 
 # Filter each statements into: update, drop, modify_rows, comment
-
-# fetch table from update
-
-# 
