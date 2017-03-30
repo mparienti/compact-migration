@@ -18,9 +18,12 @@ class MiniOptimizer:
     comments = []
 
     alter_per_table = {}
+    inter_modify = ', '
 
-    def __init__(self):
+    def __init__(self, readable_statement = False):
         self.re_index = recompile('.*index[ ]*\([ ]*`(\w+)`[ ]*\).*', reicase)
+        if readable_statement:
+            self.inter_modify = ", \n    "
 
     # Read file name from command line and fill statements variables
     def read_files(self, files):
@@ -92,7 +95,7 @@ class MiniOptimizer:
                 # remove 3 words at the beginning of the line (alter table table_name)
                 s = ' ' . join(s.split()[3:])
                 sql.append( self.clean_eol(s))
-            self.merge_alters.append(", \n    ".join(sql) + ';')
+            self.merge_alters.append(self.inter_modify.join(sql) + ';')
 
     def get_field(self, alter_stmt):
         alter_stmt_token = alter_stmt.split()
@@ -143,7 +146,8 @@ if (len(files) == 0):
     print("This program waits for file names as input")
     sys.exit()
 
-optimizer = MiniOptimizer()
+optimizer = MiniOptimizer(True)# Instanciate this class without True argument
+                               # if you want each ALTER TABLE statement on exactly one line
 optimizer.read_files(files)
 
 optimizer.sort_statements()
